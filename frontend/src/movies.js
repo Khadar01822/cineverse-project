@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 
+const API_BASE = "https://cineverse-project-oqs7.onrender.com/api/movies";
+
 function Movies() {
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("Popular Movies");
-  const [selectedMovie, setSelectedMovie] = useState(null); // For modal
+  const [selectedMovie, setSelectedMovie] = useState(null);
   const [trailerKey, setTrailerKey] = useState("");
 
   useEffect(() => {
@@ -15,7 +17,7 @@ function Movies() {
 
   const fetchPopularMovies = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/movies/popular");
+      const res = await axios.get(`${API_BASE}/popular`);
       setMovies(res.data.results);
       setTitle("Popular Movies");
     } catch (err) {
@@ -24,15 +26,10 @@ function Movies() {
   };
 
   const handleSearch = async () => {
-    if (searchQuery.trim() === "") {
-      fetchPopularMovies();
-      return;
-    }
+    if (!searchQuery.trim()) return fetchPopularMovies();
 
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/movies/search?query=${encodeURIComponent(searchQuery)}`
-      );
+      const res = await axios.get(`${API_BASE}/search?query=${encodeURIComponent(searchQuery)}`);
       setMovies(res.data.results);
       setTitle(`Search Results for "${searchQuery}"`);
     } catch (err) {
@@ -40,13 +37,11 @@ function Movies() {
     }
   };
 
-  // ✅ Fetch movie details + trailer when clicked
   const handleMovieClick = async (movieId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/movies/${movieId}`);
+      const res = await axios.get(`${API_BASE}/${movieId}`);
       setSelectedMovie(res.data);
 
-      // Find YouTube trailer key from TMDB data
       const trailer = res.data.videos?.results.find(
         (vid) => vid.type === "Trailer" && vid.site === "YouTube"
       );
@@ -56,7 +51,6 @@ function Movies() {
     }
   };
 
-  // ✅ Close the modal
   const closeModal = () => {
     setSelectedMovie(null);
     setTrailerKey("");
@@ -64,7 +58,6 @@ function Movies() {
 
   return (
     <div className="movies-page">
-      {/* 🔍 Search Bar */}
       <div className="search-bar">
         <input
           type="text"
@@ -77,31 +70,20 @@ function Movies() {
 
       <h2>{title}</h2>
 
-      {/*Movie Grid */}
       <div className="movies-container">
         {movies.map((movie) => (
-          <div
-            key={movie.id}
-            className="movie-card"
-            onClick={() => handleMovieClick(movie.id)}
-          >
-            <img
-              src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-              alt={movie.title}
-            />
+          <div key={movie.id} className="movie-card" onClick={() => handleMovieClick(movie.id)}>
+            <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt={movie.title} />
             <h3 className="movie-title">{movie.title}</h3>
             <p className="movie-rating">⭐ {movie.vote_average}</p>
           </div>
         ))}
       </div>
 
-      {/* 🎬 Movie Modal */}
       {selectedMovie && (
         <div className="movie-modal" onClick={closeModal}>
           <div className="movie-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={closeModal}>
-              ✖
-            </button>
+            <button className="close-btn" onClick={closeModal}>✖</button>
             <img
               src={`https://image.tmdb.org/t/p/w400${selectedMovie.poster_path}`}
               alt={selectedMovie.title}
@@ -111,7 +93,6 @@ function Movies() {
             <p><strong>⭐ Rating:</strong> {selectedMovie.vote_average}</p>
             <p>{selectedMovie.overview}</p>
 
-            {/* 🎥 YouTube Trailer */}
             {trailerKey ? (
               <iframe
                 width="100%"
@@ -128,6 +109,7 @@ function Movies() {
           </div>
         </div>
       )}
+
       <footer>
         <p>Published by <strong>Khadar</strong></p>
       </footer>
